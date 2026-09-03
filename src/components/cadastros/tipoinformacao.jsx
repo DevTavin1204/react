@@ -1,0 +1,136 @@
+import { useState } from 'react'
+
+function TipoInformacao() {
+  const [nome, setNome] = useState('')
+  const [unidadeMedida, setUnidadeMedida] = useState('')
+
+  const [erros, setErros] = useState({})
+  const [mensagem, setMensagem] = useState('')
+
+  function salvar(event) {
+    event.preventDefault()
+
+    const novosErros = {}
+
+    if (nome.trim() === '') {
+      novosErros.nome = 'Informe o nome'
+    }
+
+    if (unidadeMedida === '') {
+      novosErros.unidadeMedida =
+        'Selecione a unidade de medida'
+    }
+
+    setErros(novosErros)
+
+    if (Object.keys(novosErros).length > 0) {
+      setMensagem('')
+      return
+    }
+
+    setMensagem(
+      'Tipo de informação cadastrado com sucesso!'
+    )
+
+    console.log({
+      nome,
+      unidadeMedida
+    })
+  }
+
+  return (
+    <section className="p-4">
+
+      <h2 className="mb-4">
+        Cadastro de Tipo de Informação
+      </h2>
+
+      {mensagem && (
+        <div className="alert alert-success">
+          {mensagem}
+        </div>
+      )}
+
+      <form onSubmit={salvar}>
+
+        <div className="mb-3">
+          <label className="form-label">
+            Nome
+          </label>
+
+          <input
+            type="text"
+            className={`form-control ${
+              erros.nome ? 'is-invalid' : ''
+            }`}
+            value={nome}
+            onChange={(event) =>
+              setNome(event.target.value)
+            }
+          />
+
+          {erros.nome && (
+            <div className="invalid-feedback">
+              {erros.nome}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">
+            Unidade de Medida
+          </label>
+
+          <select
+            className={`form-select ${
+              erros.unidadeMedida
+                ? 'is-invalid'
+                : ''
+            }`}
+            value={unidadeMedida}
+            onChange={(event) =>
+              setUnidadeMedida(event.target.value)
+            }
+          >
+            <option value="">
+              Selecione uma unidade
+            </option>
+
+            <option value="1">
+              Quilograma (kg)
+            </option>
+
+            <option value="2">
+              Metro (m)
+            </option>
+
+            <option value="3">
+              Grau (°)
+            </option>
+
+            <option value="4">
+              Percentual (%)
+            </option>
+          </select>
+
+          {erros.unidadeMedida && (
+            <div className="invalid-feedback">
+              {erros.unidadeMedida}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn-primary"
+        >
+          Cadastrar
+        </button>
+
+      </form>
+
+    </section>
+  )
+}
+
+export default TipoInformacao
