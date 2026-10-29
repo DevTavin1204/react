@@ -1,10 +1,16 @@
+
 import { useState } from 'react'
 
-function MenuLateral({ aberto, setTela }) {
+function MenuLateral({
+  aberto,
+  setTela,
+  indicadores = [],
+  selecionarIndicador,
+}) {
   const [cadastroAberto, setCadastroAberto] = useState(false)
 
   function alterarCadastro() {
-    setCadastroAberto(!cadastroAberto)
+    setCadastroAberto((anterior) => !anterior)
   }
 
   return (
@@ -13,14 +19,13 @@ function MenuLateral({ aberto, setTela }) {
         aberto ? 'aberto' : 'fechado'
       }`}
     >
-
       <h2 className="h6 text-uppercase mb-3">
         Menu
       </h2>
 
       <div className="d-grid gap-2">
-
         <button
+          type="button"
           className="btn btn-outline-light text-start"
           onClick={() => setTela('inicio')}
         >
@@ -28,6 +33,7 @@ function MenuLateral({ aberto, setTela }) {
         </button>
 
         <button
+          type="button"
           className="btn btn-outline-light text-start"
           onClick={alterarCadastro}
         >
@@ -36,68 +42,108 @@ function MenuLateral({ aberto, setTela }) {
 
         {cadastroAberto && (
           <div className="ms-3 d-grid gap-2">
+            {/* Novos cadastros integrados à API */}
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('safra')}
+              onClick={() => setTela('safras')}
             >
-              Safra
+              Safras
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('unidade')}
+              onClick={() => setTela('unidades')}
             >
-              Unidade
+              Unidades
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('equipamento')}
+              onClick={() => setTela('unidadesMedida')}
             >
-              Equipamento
+              Unidades de Medida (API)
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('medicao')}
+              onClick={() => setTela('equipamentos')}
             >
-              Medição
+              Equipamentos (API)
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('unidademedida')}
+              onClick={() => setTela('tiposInformacao')}
             >
-              Unidade de Medida
+              Tipos de Informação (API)
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
-              onClick={() => setTela('tipoinformacao')}
+              onClick={() => setTela('medicoes')}
             >
-              Tipo de Informação
+              Medições (API)
             </button>
 
+            <hr className="border-secondary" />
+
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
               onClick={() => setTela('indicadores')}
             >
-              Indicadores
+              Cadastro de Indicadores
             </button>
 
             <button
+              type="button"
               className="btn btn-sm btn-dark text-start"
               onClick={() => setTela('funcionarios')}
             >
               Funcionários
             </button>
 
+            <button
+              type="button"
+              className="btn btn-sm btn-dark text-start"
+              onClick={() => setTela('usuarios')}
+            >
+              Usuários
+            </button>
           </div>
         )}
 
-      </div>
+        <hr className="border-secondary" />
 
+        <h3 className="h6 text-uppercase mt-1">
+          Indicadores
+        </h3>
+
+        {indicadores.length === 0 ? (
+          <p className="small text-white-50 mb-2">
+            Nenhum indicador cadastrado.
+          </p>
+        ) : (
+          indicadores.map((item) => (
+            <button
+              key={item.Id}
+              type="button"
+              className="btn btn-outline-light text-start mb-1"
+              onClick={() => selecionarIndicador(item)}
+              title={item.Descricao || item.Nome}
+            >
+              {item.Nome}
+            </button>
+          ))
+        )}
+      </div>
     </aside>
   )
 }

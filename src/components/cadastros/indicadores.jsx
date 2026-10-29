@@ -1,146 +1,265 @@
-import { useState } from 'react'
 
-function Indicadores() {
-  const [nome, setNome] = useState('')
-  const [descricao, setDescricao] = useState('')
-  const [url, setUrl] = useState('')
+import { useEffect, useState } from 'react'
+import { indicadorService } from '../../services/indicadorService'
 
-  const [erros, setErros] = useState({})
-  const [mensagem, setMensagem] = useState('')
+const vazio = {
+  Nome: '',
+  Descricao: '',
+  Url: '',
+}
 
-  function salvar(event) {
+export default function Indicadores({ atualizarMenu }) {
+  const [itens, setItens] = useState([])
+  const [form, setForm] = useState({ ...vazio })
+  const [idEdicao, setIdEdicao] = useState(null)
+  const [erro, setErro] = useState('')
+  const [carregando, setCarregando] = useState(false)
+
+  async function carregar() {
+    try {
+      setCarregando(true)
+
+      const dados = await indicadorService.listar()
+
+      if (!Array.isArray(dados)) {
+        throw new Error('A API não retornou uma lista de indicadores.')
+      }
+
+      setItens(dados)
+      setErro('')
+    } catch (e) {
+      setErro(e.message || 'Erro ao carregar os indicadores.')
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  useEffect(() => {
+    carregar()
+  }, [])
+
+  function alterar(event) {
+    const { name, value } = event.target
+
+    setForm((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }))
+  }
+
+  async function salvar(event) {
     event.preventDefault()
+    setErro('')
 
-    const novosErros = {}
+    try {
+      const url = new URL(form.Url)
 
-    if (nome.trim() === '') {
-      novosErros.nome = 'Informe o nome'
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        throw new Error('A URL deve começar com http:// ou https://')
+      }
+
+      if (idEdicao === null) {
+        await indicadorService.cadastrar(form)
+      } else {
+        await indicadorService.atualizar(idEdicao, {
+          Id: idEdicao,
+          ...form,
+        })
+      }
+
+      setForm({ ...vazio })
+      setIdEdicao(null)
+
+      await carregar()
+      await atualizarMenu()
+    } catch (e) {
+      setErro(e.message || 'Falha ao salvar o indicador.')
     }
+  }
 
-    if (descricao.trim() === '') {
-      novosErros.descricao =
-        'Informe a descrição'
-    }
+  function editar(item) {
+    setIdEdicao(item.Id)
 
-    if (url.trim() === '') {
-      novosErros.url = 'Informe a URL'
-    }
+    setForm({
+      Nome: item.Nome ?? '',
+      Descricao: item.Descricao ?? '',
+      Url: item.Url ?? '',
+    })
 
-    setErros(novosErros)
+    setErro('')
+  }
 
-    if (Object.keys(novosErros).length > 0) {
-      setMensagem('')
-      return
-    }
-
-    setMensagem(
-      'Indicador cadastrado com sucesso!'
+  async function excluir(id) {
+    const confirmar = window.confirm(
+      'Deseja realmente excluir este indicador?'
     )
 
-    console.log({
-      nome,
-      descricao,
-      url
-    })
+    if (!confirmar) return
+
+    setErro('')
+
+    try {
+      await indicadorService.excluir(id)
+
+      if (idEdicao === id) {
+        cancelarEdicao()
+      }
+
+      await carregar()
+      await atualizarMenu()
+    } catch (e) {
+      setErro(e.message || 'Falha ao excluir o indicador.')
+    }
+  }
+
+  function cancelarEdicao() {
+    setIdEdicao(null)
+    setForm({ ...vazio })
+    setErro('')
   }
 
   return (
-    <section className="p-4">
+    <section className="container-fluid p-4">
+      <h2 className="mb-4">Cadastro de Indicadores</h2>
 
-      <h2 className="mb-4">
-        Cadastro de Indicador
-      </h2>
-
-      {mensagem && (
-        <div className="alert alert-success">
-          {mensagem}
+      {erro && (
+        <div className="alert alert-danger" role="alert">
+          {erro}
         </div>
       )}
 
-      <form onSubmit={salvar}>
-
+      <form
+        className="card card-body mb-4"
+        onSubmit={salvar}
+      >
         <div className="mb-3">
-          <label className="form-label">
+          <label htmlFor="Nome" className="form-label">
             Nome
           </label>
 
           <input
+            id="Nome"
+            name="Nome"
             type="text"
-            className={`form-control ${
-              erros.nome ? 'is-invalid' : ''
-            }`}
-            value={nome}
-            onChange={(event) =>
-              setNome(event.target.value)
-            }
+            value={form.Nome}
+            onChange={alterar}
+            className="form-control"
+            maxLength={100}
+            required
           />
-
-          {erros.nome && (
-            <div className="invalid-feedback">
-              {erros.nome}
-            </div>
-          )}
         </div>
 
         <div className="mb-3">
-          <label className="form-label">
+          <label htmlFor="Descricao" className="form-label">
             Descrição
           </label>
 
           <textarea
-            className={`form-control ${
-              erros.descricao
-                ? 'is-invalid'
-                : ''
-            }`}
-            rows="4"
-            value={descricao}
-            onChange={(event) =>
-              setDescricao(event.target.value)
-            }
+            id="Descricao"
+            name="Descricao"
+            value={form.Descricao}
+            onChange={alterar}
+            className="form-control"
+            rows={3}
           />
-
-          {erros.descricao && (
-            <div className="invalid-feedback">
-              {erros.descricao}
-            </div>
-          )}
         </div>
 
         <div className="mb-3">
-          <label className="form-label">
-            URL
+          <label htmlFor="Url" className="form-label">
+            URL do indicador
           </label>
 
           <input
+            id="Url"
+            name="Url"
             type="url"
-            className={`form-control ${
-              erros.url ? 'is-invalid' : ''
-            }`}
-            value={url}
-            onChange={(event) =>
-              setUrl(event.target.value)
-            }
+            value={form.Url}
+            onChange={alterar}
+            className="form-control"
+            placeholder="https://exemplo.com/dashboard"
+            required
           />
-
-          {erros.url && (
-            <div className="invalid-feedback">
-              {erros.url}
-            </div>
-          )}
         </div>
 
-        <button
-          type="submit"
-          className="btn btn-primary"
-        >
-          Cadastrar
-        </button>
+        <div>
+          <button
+            type="submit"
+            className="btn btn-primary me-2"
+            disabled={carregando}
+          >
+            {idEdicao === null
+              ? 'Cadastrar'
+              : 'Salvar alterações'}
+          </button>
 
+          {idEdicao !== null && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={cancelarEdicao}
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
       </form>
 
+      <h4 className="mb-3">Indicadores cadastrados</h4>
+
+      {carregando && (
+        <p>Carregando indicadores...</p>
+      )}
+
+      {!carregando && !erro && itens.length === 0 && (
+        <p>Nenhum indicador cadastrado.</p>
+      )}
+
+      <div className="table-responsive">
+        <table className="table table-striped table-hover align-middle">
+          <thead className="table-dark">
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>URL</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {itens.map((item) => (
+              <tr key={item.Id}>
+                <td>{item.Nome}</td>
+
+                <td>{item.Descricao}</td>
+
+                <td className="text-break">
+                  {item.Url}
+                </td>
+
+                <td>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-warning btn-sm"
+                      onClick={() => editar(item)}
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => excluir(item.Id)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }
-
-export default Indicadores
